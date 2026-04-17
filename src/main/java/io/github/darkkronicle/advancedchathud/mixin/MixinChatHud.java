@@ -1,0 +1,165 @@
+/*
+ * Copyright (C) 2021 DarkKronicle
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+package io.github.darkkronicle.advancedchathud.mixin;
+
+import io.github.darkkronicle.advancedchatcore.chat.ChatMessage;
+import io.github.darkkronicle.advancedchathud.HudChatMessage;
+import io.github.darkkronicle.advancedchathud.HudChatMessageHolder;
+import io.github.darkkronicle.advancedchathud.config.HudConfigStorage;
+import io.github.darkkronicle.advancedchathud.gui.WindowManager;
+import io.github.darkkronicle.advancedchathud.itf.IChatHud;
+import io.github.darkkronicle.advancedchathud.tabs.AbstractChatTab;
+import java.util.Iterator;
+import java.util.List;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.font.TextRenderer;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.hud.ChatHud;
+import net.minecraft.client.gui.hud.ChatHudLine;
+import net.minecraft.client.util.ChatMessages;
+import net.minecraft.text.OrderedText;
+import net.minecraft.text.Text;
+import net.minecraft.util.math.MathHelper;
+import org.spongepowered.asm.mixin.Final;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+@Mixin(value = ChatHud.class, priority = 1050)
+@Environment(EnvType.CLIENT)
+public abstract class MixinChatHud implements IChatHud {
+
+    @Shadow @Final private MinecraftClient client;
+    @Shadow @Final private List<ChatHudLine> messages;
+    @Shadow @Final private List<ChatHudLine.Visible> visibleMessages;
+
+    @Shadow private int scrolledLines;
+    @Shadow private boolean hasUnreadNewMessages;
+
+    @Unique
+    private AbstractChatTab tab;
+
+    @Shadow
+    public abstract int getWidth();
+
+    @Shadow
+    public abstract double getChatScale();
+
+    @Shadow
+    public abstract boolean isChatFocused();
+
+    @Shadow
+    public abstract void scroll(int amount);
+
+    @Shadow
+    public abstract int getHeight();
+
+    @Inject(at = @At("HEAD"), method = "scroll", cancellable = true)
+    private void scroll(int amount, CallbackInfo ci) {
+        // Only scroll if nothing is focused
+        if (WindowManager.getInstance().getSelected() != null) {
+            ci.cancel();
+        }
+    }
+
+    @Inject(at = @At("HEAD"), method = "render", cancellable = true)
+    private void render(
+            DrawContext context,
+            TextRenderer textRenderer,
+            int currentTick,
+            int mouseX,
+            int mouseY,
+            boolean focused,
+            boolean refreshed,
+            CallbackInfo ci) {
+        // Ignore rendering vanilla chat if disabled
+        if (!HudConfigStorage.General.VANILLA_HUD.config.getBooleanValue()) {
+            ci.cancel();
+        }
+    }
+
+    public AbstractChatTab getTab() {
+        return tab;
+    }
+
+    public void setTab(AbstractChatTab tab) {
+        this.tab = tab;
+        this.messages.clear();
+        this.visibleMessages.clear();
+
+        List<HudChatMessage> messages = HudChatMessageHolder.getInstance().getMessages();
+        for (int i = messages.size() - 1; i >= 0; i--) {
+            addMessage(messages.get(i));
+        }
+    }
+
+    @Override
+    public void removeMessage(ChatMessage remove) {
+        // Reset messages that exist
+        setTab(this.tab);
+    }
+
+    @Override
+    public void addMessage(HudChatMessage hudMsg) {
+        if (tab == null || !hudMsg.getTabs().contains(tab)) {
+            return;
+        }
+        if (HudConfigStorage.General.VANILLA_HUD.config.getBooleanValue()) {
+            tab.resetUnread();
+        }
+
+        int width = MathHelper.floor((double) this.getWidth() / this.getChatScale());
+
+        ChatMessage msg = hudMsg.getMessage();
+
+        List<OrderedText> list =
+                ChatMessages.breakRenderedChatMessageLines(
+                        msg.getDisplayText(), width, this.client.textRenderer);
+
+        OrderedText orderedText;
+        for (Iterator<OrderedText> text = list.iterator();
+                text.hasNext();
+                this.visibleMessages.addFirst(new ChatHudLine.Visible(msg.getCreationTick(), orderedText, msg.getIndicator(), !text.hasNext()))) {
+            orderedText = text.next();
+            if (this.isChatFocused() && this.scrolledLines > 0) {
+                this.hasUnreadNewMessages = true;
+                this.scroll(1);
+            }
+        }
+
+        while (this.visibleMessages.size()
+                > HudConfigStorage.General.STORED_LINES.config.getIntegerValue()) {
+            this.visibleMessages.removeLast();
+        }
+
+        this.messages.addFirst(new ChatHudLine(msg.getCreationTick(), msg.getDisplayText(), msg.getSignature(), msg.getIndicator()));
+        while (this.messages.size()
+                > HudConfigStorage.General.STORED_LINES.config.getIntegerValue()) {
+            this.messages.removeLast();
+        }
+    }
+
+    @Shadow
+    public abstract void clear(boolean clearHistory);
+
+    @Shadow public abstract void reset();
+
+    @Override
+    public boolean isOver(double mouseX, double mouseY) {
+        double minX = 4 - (4 * getChatScale());
+        double maxX = 4 + (getWidth() + 4 * getChatScale());
+
+        mouseY = (client.getWindow().getScaledHeight() - mouseY - 40) / getChatScale();
+        return mouseX >= minX && mouseX < maxX && mouseY >= 0 && mouseY < getHeight();
+    }
+}
