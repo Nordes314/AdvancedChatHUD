@@ -45,6 +45,8 @@ import net.minecraft.util.Util;
 @Environment(EnvType.CLIENT)
 public class ChatWindow {
 
+    private static final int HORIZONTAL_SCISSOR_MARGIN = 1;
+
     private double scrolledHeight = 0;
     private double scrollStart = 0;
     private double scrollEnd = 0;
@@ -244,12 +246,60 @@ public class ChatWindow {
         return HudConfigStorage.General.CHAT_HEADS.config.getBooleanValue() ? 10 : 0;
     }
 
+    private int scaleCoordinateUp(int coordinate) {
+        return (int) Math.ceil(coordinate / getScale());
+    }
+
+    private int scaleDimensionUp(int dimension) {
+        return (int) Math.ceil(dimension / getScale());
+    }
+
+    private int scaleToScreenFloor(int coordinate) {
+        return (int) Math.floor(coordinate * getScale());
+    }
+
+    private int scaleToScreenCeil(int coordinate) {
+        return (int) Math.ceil(coordinate * getScale());
+    }
+
+    private int clampScreenX(int x) {
+        return Math.max(0, Math.min(client.getWindow().getScaledWidth(), x));
+    }
+
+    private int clampScreenY(int y) {
+        return Math.max(0, Math.min(client.getWindow().getScaledHeight(), y));
+    }
+
+    private int getScaledTopY() {
+        return getScaledBottomY() - getScaledHeight();
+    }
+
+    private int getScaledBottomY() {
+        return scaleCoordinateUp(this.getConvertedY());
+    }
+
+    private int getScissorLeft() {
+        return clampScreenX(scaleToScreenFloor(getLeftX()) - HORIZONTAL_SCISSOR_MARGIN);
+    }
+
+    private int getScissorRight() {
+        return clampScreenX(scaleToScreenCeil(getRightX()) + HORIZONTAL_SCISSOR_MARGIN);
+    }
+
+    private int getScissorTop() {
+        return clampScreenY(scaleToScreenFloor(getScaledTopY()));
+    }
+
+    private int getScissorBottom() {
+        return clampScreenY(scaleToScreenCeil(getScaledBottomY()));
+    }
+
     private int getActualY(int y) {
-        return (int) Math.ceil(this.getConvertedY() / getScale()) - y;
+        return getScaledBottomY() - y;
     }
 
     private int getLeftX() {
-        return (int) Math.ceil(this.getConvertedX() / getScale());
+        return scaleCoordinateUp(this.getConvertedX());
     }
 
     private int getPaddedLeftX() {
@@ -277,11 +327,11 @@ public class ChatWindow {
     }
 
     private int getScaledHeight() {
-        return (int) Math.ceil(getConvertedHeight() / getScale());
+        return scaleDimensionUp(getConvertedHeight());
     }
 
     private int getScaledWidth() {
-        return (int) Math.ceil(getConvertedWidth() / getScale());
+        return scaleDimensionUp(getConvertedWidth());
     }
 
     private int getBarHeight() {
@@ -326,10 +376,10 @@ public class ChatWindow {
         boolean scissorEnabled = getConvertedWidth() > 0 && getConvertedHeight() > 0;
         if (scissorEnabled) {
             context.enableScissor(
-                    getConvertedX(),
-                    getConvertedY() - getConvertedHeight(),
-                    getConvertedX() + getConvertedWidth(),
-                    getConvertedY());
+                    getScissorLeft(),
+                    getScissorTop(),
+                    getScissorRight(),
+                    getScissorBottom());
         }
 
         context.getMatrices().pushMatrix();
