@@ -138,7 +138,7 @@ public class HudConfigStorage implements IConfigHandler {
 
         public static final SaveableConfig<ConfigDouble> CHAT_SCALE =
                 SaveableConfig.fromConfig(
-                        translate("chatScale"),
+                        "chatScale",
                         new ConfigDouble(
                                 translate("chatscale"), 1, 0, 1, translate("info.chatscale")));
 
@@ -207,6 +207,14 @@ public class HudConfigStorage implements IConfigHandler {
                                 translate("renderinother"),
                                 true,
                                 translate("info.renderinother")));
+
+        public static final SaveableConfig<ConfigBoolean> HIDE_WITH_F1 =
+                SaveableConfig.fromConfig(
+                        "hideWithF1",
+                        new ConfigBoolean(
+                                translate("hidewithf1"),
+                                false,
+                                translate("info.hidewithf1")));
 
         public static final SaveableConfig<ConfigInteger> SCROLL_TIME =
                 SaveableConfig.fromConfig(
@@ -279,6 +287,7 @@ public class HudConfigStorage implements IConfigHandler {
                         ALTERNATE_LINES,
                         STORED_LINES,
                         RENDER_IN_OTHER_GUI,
+                        HIDE_WITH_F1,
                         SCROLL_TIME,
                         SCROLL_DISTANCE,
                         SCROLL_ACCELERATION,
@@ -300,13 +309,13 @@ public class HudConfigStorage implements IConfigHandler {
                 ChatTab.ChatTabJsonSave tabJson = new ChatTab.ChatTabJsonSave();
                 JsonObject root = element.getAsJsonObject();
                 JsonElement tab = root.get("maintab");
-                if (tab.isJsonObject()) {
+                if (tab != null && tab.isJsonObject()) {
                     MAIN_TAB = tabJson.load(tab.getAsJsonObject());
                     AdvancedChatHud.MAIN_CHAT_TAB.refreshOptions();
                 }
                 JsonElement tabs = root.get("tabs");
                 TABS.clear();
-                if (tabs.isJsonArray()) {
+                if (tabs != null && tabs.isJsonArray()) {
                     for (JsonElement t : tabs.getAsJsonArray()) {
                         if (t.isJsonObject()) {
                             TABS.add(tabJson.load(t.getAsJsonObject()));
@@ -325,7 +334,11 @@ public class HudConfigStorage implements IConfigHandler {
                 ConfigStorage.readOptions(
                         root, General.NAME, (List<SaveableConfig<?>>) General.OPTIONS);
 
-                int version = JsonUtils.getIntegerOrDefault(root, "configVersion", 0);
+                int version =
+                        JsonUtils.getIntegerOrDefault(
+                                root,
+                                "config_version",
+                                JsonUtils.getIntegerOrDefault(root, "configVersion", 0));
             }
         }
     }

@@ -294,6 +294,20 @@ public class ChatWindow {
         return clampScreenY(scaleToScreenCeil(getScaledBottomY()));
     }
 
+    private boolean useFramedContentScissor(boolean focused) {
+        return focused && !isMinimalist();
+    }
+
+    private int getContentScissorTop(boolean focused) {
+        int inset = useFramedContentScissor(focused) ? 1 : 0;
+        return clampScreenY(scaleToScreenFloor(getScaledTopY() + inset));
+    }
+
+    private int getContentScissorBottom(boolean focused) {
+        int inset = useFramedContentScissor(focused) ? 1 : 0;
+        return clampScreenY(scaleToScreenCeil(getScaledBottomY() - inset));
+    }
+
     private int getActualY(int y) {
         return getScaledBottomY() - y;
     }
@@ -373,13 +387,17 @@ public class ChatWindow {
             scrolledHeight = totalHeight;
         }
 
-        boolean scissorEnabled = getConvertedWidth() > 0 && getConvertedHeight() > 0;
+        int scissorLeft = getScissorLeft();
+        int scissorRight = getScissorRight();
+        int scissorTop = getContentScissorTop(focused);
+        int scissorBottom = getContentScissorBottom(focused);
+        boolean scissorEnabled =
+                getConvertedWidth() > 0
+                        && getConvertedHeight() > 0
+                        && scissorLeft < scissorRight
+                        && scissorTop < scissorBottom;
         if (scissorEnabled) {
-            context.enableScissor(
-                    getScissorLeft(),
-                    getScissorTop(),
-                    getScissorRight(),
-                    getScissorBottom());
+            context.enableScissor(scissorLeft, scissorTop, scissorRight, scissorBottom);
         }
 
         context.getMatrices().pushMatrix();
@@ -459,10 +477,6 @@ public class ChatWindow {
             }
             currentHeight += HudConfigStorage.General.MESSAGE_SPACE.config.getIntegerValue();
         }
-        if (scissorEnabled) {
-            context.disableScissor();
-        }
-
         if (renderedLines == 0) {
             y.setValue(0);
         }
@@ -471,6 +485,22 @@ public class ChatWindow {
             if (isSelected()) {
                 tab.resetUnread();
             }
+        }
+
+        if (chatFocused) {
+            if (y.getValue() < getScaledHeight()) {
+                // Check to see if we've already gone above the boundaries
+                fill(
+                        context,
+                        leftX,
+                        getActualY(renderTopFirst ? limit - y.getValue() : y.getValue()),
+                        rightX,
+                        getActualY(renderTopFirst ? 0 : getScaledHeight()),
+                        tab.getInnerColor().color());
+            }
+        }
+        if (scissorEnabled) {
+            context.disableScissor();
         }
 
         if (focused && !isMinimalist()) {
@@ -603,19 +633,7 @@ public class ChatWindow {
                         Colors.getInstance().getColorOrWhite("white").color());
             }
         }
-
         if (chatFocused) {
-            if (y.getValue() < getScaledHeight()) {
-                // Check to see if we've already gone above the boundaries
-                fill(
-                        context,
-                        leftX,
-                        getActualY(renderTopFirst ? limit - y.getValue() : y.getValue()),
-                        rightX,
-                        getActualY(renderTopFirst ? 0 : getScaledHeight()),
-                        tab.getInnerColor().color());
-            }
-            // Scroll bar
             float add = (float) (scrolledHeight) / (getTotalHeight());
             int scrollHeight = (int) (add * (getScaledHeight() - 10));
             drawRect(

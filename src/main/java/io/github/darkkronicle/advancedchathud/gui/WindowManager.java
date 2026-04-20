@@ -115,6 +115,9 @@ public class WindowManager implements IRenderer, ResolutionEventHandler {
     public void onRenderGameOverlayPost(GuiContext context) {
         boolean isFocused = isChatFocused();
         int ticks = client.inGameHud.getTicks();
+        if (HudConfigStorage.General.HIDE_WITH_F1.config.getBooleanValue() && client.options.hudHidden) {
+            return;
+        }
         if (!HudConfigStorage.General.RENDER_IN_OTHER_GUI.config.getBooleanValue() && !isFocused && client.currentScreen != null) {
             return;
         }
