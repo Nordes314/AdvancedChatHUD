@@ -30,6 +30,7 @@ import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.cursor.StandardCursors;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
@@ -110,6 +111,15 @@ public class HudSection extends AdvancedChatScreenSection {
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float partialTicks) {
+        Style style = WindowManager.getInstance().getText(mouseX, mouseY);
+        if (style != null) {
+            if (style.getHoverEvent() != null) {
+                context.drawHoverEvent(MinecraftClient.getInstance().textRenderer, style, mouseX, mouseY);
+            }
+            if (style.getHoverEvent() != null || style.getClickEvent() != null) {
+                context.setCursor(StandardCursors.POINTING_HAND);
+            }
+        }
         if (menu != null) {
             menu.render(GuiContext.fromGuiGraphics(context), mouseX, mouseY, true);
         }

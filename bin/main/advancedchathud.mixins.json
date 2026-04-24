@@ -1,0 +1,19 @@
+{
+  "required": true,
+  "package": "io.github.darkkronicle.advancedchathud.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+  ],
+  "client": [
+    "MixinInGameHud",
+    "MixinChatHud",
+    "MixinMinecraftClient",
+    "ScreenInvoker"
+  ],
+  "reject": [
+    "fi.dy.masa.malilib.mixin.MixinInGameHud"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
