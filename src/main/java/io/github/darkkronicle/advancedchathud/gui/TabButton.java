@@ -17,9 +17,9 @@ import io.github.darkkronicle.advancedchatcore.util.TextUtil;
 import io.github.darkkronicle.advancedchathud.config.HudConfigStorage;
 import io.github.darkkronicle.advancedchathud.itf.IChatHud;
 import io.github.darkkronicle.advancedchathud.tabs.AbstractChatTab;
-import net.minecraft.client.gui.Click;
-import net.minecraft.client.sound.PositionedSoundInstance;
-import net.minecraft.sound.SoundEvents;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.sounds.SoundEvents;
 
 public class TabButton extends CleanButton {
 
@@ -75,10 +75,10 @@ public class TabButton extends CleanButton {
     }
 
     @Override
-    protected boolean onMouseClickedImpl(Click click, boolean doubled) {
+    protected boolean onMouseClickedImpl(MouseButtonEvent click, boolean doubled) {
         this.mc
                 .getSoundManager()
-                .play(PositionedSoundInstance.ui(SoundEvents.UI_BUTTON_CLICK.value(), 1.0F));
+                .play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK.value(), 1.0F));
         WindowManager.getInstance().onTabButton(tab);
         return true;
     }

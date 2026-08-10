@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 
 @Environment(EnvType.CLIENT)
 public class WidgetMatchEntry extends WidgetConfigListEntry<Match> {
@@ -71,9 +71,9 @@ public class WidgetMatchEntry extends WidgetConfigListEntry<Match> {
                 });
 
         pos -= findWidth + 1;
-        GuiTextFieldGeneric nameField = new GuiTextFieldGeneric(pos - nameWidth, y, nameWidth, 20, MinecraftClient.getInstance().textRenderer);
+        GuiTextFieldGeneric nameField = new GuiTextFieldGeneric(pos - nameWidth, y, nameWidth, 20, Minecraft.getInstance().font);
         nameField.setMaxLength(64000);
-        nameField.setText(entry.getPattern());
+        nameField.setValue(entry.getPattern());
         name = new TextFieldWrapper<>(nameField, new SaveListener(this));
         parent.addTextField(name);
         texts = new ArrayList<>();
@@ -99,7 +99,7 @@ public class WidgetMatchEntry extends WidgetConfigListEntry<Match> {
     }
 
     public void save() {
-        entry.setPattern(name.textField().getText());
+        entry.setPattern(name.textField().getValue());
     }
 
     private static class SaveListener implements ITextFieldListener<GuiTextFieldGeneric> {
@@ -112,7 +112,7 @@ public class WidgetMatchEntry extends WidgetConfigListEntry<Match> {
 
         @Override
         public boolean onTextChange(GuiTextFieldGeneric textField) {
-            parent.entry.setPattern(textField.getText());
+            parent.entry.setPattern(textField.getValue());
             return false;
         }
     }

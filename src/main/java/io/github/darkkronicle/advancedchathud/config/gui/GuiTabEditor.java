@@ -25,8 +25,8 @@ import io.github.darkkronicle.advancedchathud.AdvancedChatHud;
 import io.github.darkkronicle.advancedchathud.config.ChatTab;
 import java.util.ArrayList;
 import java.util.List;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.input.KeyInput;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
 
 public class GuiTabEditor extends GuiConfigsBase implements IClosable {
 
@@ -93,9 +93,9 @@ public class GuiTabEditor extends GuiConfigsBase implements IClosable {
     }
 
     @Override
-    public void close() {
+    public void onClose() {
         save();
-        super.close();
+        super.onClose();
     }
 
     @Override
@@ -110,7 +110,7 @@ public class GuiTabEditor extends GuiConfigsBase implements IClosable {
     }
 
     @Override
-    public boolean onKeyTyped(KeyInput input) {
+    public boolean onKeyTyped(KeyEvent input) {
         // Override so that on escape stuff still gets saved
         if (this.activeKeybindButton != null) {
             this.activeKeybindButton.onKeyPressed(input.key());

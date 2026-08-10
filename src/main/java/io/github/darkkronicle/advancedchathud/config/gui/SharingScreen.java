@@ -19,8 +19,8 @@ import io.github.darkkronicle.advancedchatcore.gui.buttons.NamedSimpleButton;
 import io.github.darkkronicle.advancedchathud.AdvancedChatHud;
 import io.github.darkkronicle.advancedchathud.config.ChatTab;
 import io.github.darkkronicle.advancedchathud.config.HudConfigStorage;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 
 /** Screen for importing and exporting {@link ChatTab}. */
 public class SharingScreen extends GuiBase {
@@ -45,7 +45,7 @@ public class SharingScreen extends GuiBase {
         this.width = width;
         this.height = height;
         this.clearElements();
-        this.clearAndInit();
+        this.rebuildWidgets();
     }
 
     @Override
@@ -53,16 +53,16 @@ public class SharingScreen extends GuiBase {
         super.initGui();
         int x = this.width / 2 - 150;
         int y = 50;
-        text = new GuiTextFieldGeneric(x, y, 300, 20, client.textRenderer);
+        text = new GuiTextFieldGeneric(x, y, 300, 20, minecraft.font);
         y -= 24;
         text.setMaxLength(12800);
         if (starting != null) {
-            text.setText(starting);
+            text.setValue(starting);
             text.setFocused(true);
         }
 
         text.setFocused(true);
-        text.setDrawsBackground(true);
+        text.setBordered(true);
         text.setEditable(true);
         text.setFocused(true);
 
@@ -78,7 +78,7 @@ public class SharingScreen extends GuiBase {
 
     public void importTab() {
         ChatTab.ChatTabJsonSave tabSave = new ChatTab.ChatTabJsonSave();
-        ChatTab tab = tabSave.load(new JsonParser().parse(text.getText()).getAsJsonObject());
+        ChatTab tab = tabSave.load(new JsonParser().parse(text.getValue()).getAsJsonObject());
         if (tab == null) {
             throw new NullPointerException("Filter is null!");
         }

@@ -33,18 +33,19 @@ import java.util.List;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.Click;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.ChatScreen;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.text.Style;
+import net.minecraft.client.Minecraft;
+import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Style;
 
 @Environment(EnvType.CLIENT)
 public class WindowManager implements IRenderer, ResolutionEventHandler {
 
     private static final WindowManager INSTANCE = new WindowManager();
-    private final MinecraftClient client;
+    private final Minecraft client;
     private final List<ChatWindow> windows = new ArrayList<>(8);
     private int dragX = 0;
     private int dragY = 0;
@@ -56,7 +57,7 @@ public class WindowManager implements IRenderer, ResolutionEventHandler {
     }
 
     private WindowManager() {
-        client = MinecraftClient.getInstance();
+        client = Minecraft.getInstance();
     }
 
     public void reset() {
@@ -112,13 +113,14 @@ public class WindowManager implements IRenderer, ResolutionEventHandler {
     }
 
     @Override
-    public void onRenderGameOverlayPost(GuiContext context) {
+    public void onExtractGuiOverlayPost(
+            GuiContext context, float tickDelta, ProfilerFiller profiler) {
         boolean isFocused = isChatFocused();
-        int ticks = client.inGameHud.getTicks();
-        if (HudConfigStorage.General.HIDE_WITH_F1.config.getBooleanValue() && client.options.hudHidden) {
+        int ticks = client.gui.hud.getGuiTicks();
+        if (HudConfigStorage.General.HIDE_WITH_F1.config.getBooleanValue() && client.gui.hud.isHidden()) {
             return;
         }
-        if (!HudConfigStorage.General.RENDER_IN_OTHER_GUI.config.getBooleanValue() && !isFocused && client.currentScreen != null) {
+        if (!HudConfigStorage.General.RENDER_IN_OTHER_GUI.config.getBooleanValue() && !isFocused && client.gui.screen() != null) {
             return;
         }
         for (int i = windows.size() - 1; i >= 0; i--) {
@@ -168,7 +170,7 @@ public class WindowManager implements IRenderer, ResolutionEventHandler {
     }
 
     public boolean isChatFocused() {
-        return this.client.currentScreen instanceof AdvancedChatScreen;
+        return this.client.gui.screen() instanceof AdvancedChatScreen;
     }
 
     public ChatWindow getSelected() {
@@ -193,14 +195,14 @@ public class WindowManager implements IRenderer, ResolutionEventHandler {
         windows.removeIf(w -> w == window);
         windows.add(0, window);
 
-        if (!HudConfigStorage.General.CHANGE_START_MESSAGE.config.getBooleanValue() || !(client.currentScreen instanceof AdvancedChatScreen screen)) {
+        if (!HudConfigStorage.General.CHANGE_START_MESSAGE.config.getBooleanValue() || !(client.gui.screen() instanceof AdvancedChatScreen screen)) {
             return;
         }
         if (window.getTab() instanceof MainChatTab) {
             for (ChatWindow w : windows) {
                 if (w.getTab() instanceof CustomChatTab tab2) {
-                    if (screen.getChatField().getText().startsWith(tab2.getStartingMessage()) && tab2.getStartingMessage().length() > 0) {
-                        screen.getChatField().setText(screen.getChatField().getText().substring(tab2.getStartingMessage().length()));
+                    if (screen.getChatField().getValue().startsWith(tab2.getStartingMessage()) && tab2.getStartingMessage().length() > 0) {
+                        screen.getChatField().setText(screen.getChatField().getValue().substring(tab2.getStartingMessage().length()));
                         break;
                     }
                 }
@@ -210,8 +212,8 @@ public class WindowManager implements IRenderer, ResolutionEventHandler {
 
             for (ChatWindow w : windows) {
                 if (w.getTab() instanceof CustomChatTab tab2) {
-                    if (screen.getChatField().getText().startsWith(tab2.getStartingMessage()) && tab2.getStartingMessage().length() > 0) {
-                        screen.getChatField().setText(tab.getStartingMessage() + screen.getChatField().getText().substring(tab2.getStartingMessage().length()));
+                    if (screen.getChatField().getValue().startsWith(tab2.getStartingMessage()) && tab2.getStartingMessage().length() > 0) {
+                        screen.getChatField().setText(tab.getStartingMessage() + screen.getChatField().getValue().substring(tab2.getStartingMessage().length()));
 
                         replaced = true;
 
@@ -221,7 +223,7 @@ public class WindowManager implements IRenderer, ResolutionEventHandler {
             }
 
             if (!replaced) {
-                screen.getChatField().setText(tab.getStartingMessage() + screen.getChatField().getText());
+                screen.getChatField().setText(tab.getStartingMessage() + screen.getChatField().getValue());
             }
         }
     }
@@ -270,12 +272,12 @@ public class WindowManager implements IRenderer, ResolutionEventHandler {
         return IChatHud.getInstance().isOver(mouseX, mouseY);
     }
 
-    public boolean mouseDragged(Click click, double deltaX, double deltaY) {
+    public boolean mouseDragged(MouseButtonEvent click, double deltaX, double deltaY) {
         if (drag != null && !resize) {
             int x = Math.max((int) click.x() - dragX, 0);
             int y = Math.max((int) click.y() - dragY, drag.getActualHeight());
-            x = Math.min(x, client.getWindow().getScaledWidth() - drag.getConvertedWidth());
-            y = Math.min(y, client.getWindow().getScaledHeight());
+            x = Math.min(x, client.getWindow().getGuiScaledWidth() - drag.getConvertedWidth());
+            y = Math.min(y, client.getWindow().getGuiScaledHeight());
             drag.setPosition(x, y);
             return true;
         } else if (drag != null) {
@@ -287,7 +289,7 @@ public class WindowManager implements IRenderer, ResolutionEventHandler {
         return false;
     }
 
-    public boolean mouseReleased(Click click) {
+    public boolean mouseReleased(MouseButtonEvent click) {
         if (drag != null) {
             drag = null;
             return true;
@@ -373,7 +375,7 @@ public class WindowManager implements IRenderer, ResolutionEventHandler {
     }
 
     public ChatWindow getHovered(int x, int y) {
-        int windowHeight = client.getWindow().getScaledHeight();
+        int windowHeight = client.getWindow().getGuiScaledHeight();
         for (ChatWindow w : windows) {
             int wX = w.getConvertedX();
             int wY = w.getConvertedY();

@@ -24,7 +24,7 @@ import io.github.darkkronicle.advancedchathud.tabs.MainChatTab;
 import java.util.List;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screens.Screen;
 
 @Environment(EnvType.CLIENT)
 public class HudInitHandler implements IInitializationHandler {
@@ -54,7 +54,7 @@ public class HudInitHandler implements IInitializationHandler {
         ChatHistory.getInstance().addOnClear(() -> WindowManager.getInstance().clear());
         ChatHistory.getInstance().addOnClear(() -> HudChatMessageHolder.getInstance().clear());
         ChatHistory.getInstance().addOnUpdate(HudChatMessageHolder.getInstance());
-        RenderEventHandler.getInstance().registerGameOverlayRenderer(WindowManager.getInstance());
+        RenderEventHandler.getInstance().registerInGameGuiRenderer(WindowManager.getInstance());
         ResolutionEventHandler.ON_RESOLUTION_CHANGE.add(WindowManager.getInstance());
     }
 }
