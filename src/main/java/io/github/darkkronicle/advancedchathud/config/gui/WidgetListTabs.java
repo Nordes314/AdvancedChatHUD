@@ -14,7 +14,7 @@ import io.github.darkkronicle.advancedchathud.config.HudConfigStorage;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screens.Screen;
 
 public class WidgetListTabs extends WidgetConfigList<ChatTab, WidgetTabEntry> {
 

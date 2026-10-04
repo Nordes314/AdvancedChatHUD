@@ -20,7 +20,7 @@ import io.github.darkkronicle.advancedchatcore.util.FindType;
 import io.github.darkkronicle.advancedchathud.AdvancedChatHud;
 import io.github.darkkronicle.advancedchathud.config.ChatTab;
 import io.github.darkkronicle.advancedchathud.config.Match;
-import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screens.Screen;
 
 public class MatchesEditor extends CoreGuiListBase<Match, WidgetMatchEntry, WidgetListMatches>
         implements IClosable {

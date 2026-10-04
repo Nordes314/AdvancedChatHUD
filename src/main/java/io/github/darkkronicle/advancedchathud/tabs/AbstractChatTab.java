@@ -12,7 +12,7 @@ import java.util.UUID;
 import lombok.Data;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 /** Base ChatTab that allows for custom chat tabs in AdvancedChatHud. */
 @Environment(EnvType.CLIENT)
@@ -60,5 +60,5 @@ public abstract class AbstractChatTab {
      * @param text Object to search.
      * @return True if it should be added.
      */
-    public abstract boolean shouldAdd(Text text);
+    public abstract boolean shouldAdd(Component text);
 }
